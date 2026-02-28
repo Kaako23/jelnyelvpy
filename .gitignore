@@ -1,0 +1,50 @@
+# Virtual environment
+.env/
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Model and data
+your_model.pth
+data/
+jelek/
+assets/mediapipe/*.task
+ertekelesi_jelentes.txt
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build / tools
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.env/

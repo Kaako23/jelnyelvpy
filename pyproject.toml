@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jelnyelv"
+version = "0.1.0"
+description = "CPU-first sign language recognition app using MediaPipe and PyTorch"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = [
+    "mediapipe==0.10.32",
+    "torch==2.10.0",
+    "pytorch-lightning==2.6.1",
+    "torchmetrics==1.8.2",
+    "onnxruntime==1.24.1",
+    "numpy>=2,<3",
+    "protobuf>=4.25.3,<5",
+    "gradio>=6.5.1,<7",
+    "huggingface-hub>=1,<2",
+    "scikit-learn>=1.5.0,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+    "black>=24.0.0",
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+    "pytest>=8.0.0",
+    "pyinstaller>=6.0.0",
+]
+
+[project.scripts]
+jelnyelv = "jelnyelv.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jelnyelv"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/jelnyelv"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | venv
+    | build
+    | dist
+)/
+'''
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
