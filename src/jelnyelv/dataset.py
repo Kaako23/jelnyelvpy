@@ -1,7 +1,6 @@
 """Load/save sequences and word list. Streaming Dataset for scalable training."""
 
 import os
-from pathlib import Path
 
 import numpy as np
 import torch
@@ -45,40 +44,8 @@ def get_words_from_folders() -> list[str]:
 
 
 def get_words_for_record() -> list[str]:
-    """Words for Record tab: folders + optional szavak.txt, deduplicated and sorted.
-    Labels come from recorded data; szavak.txt is optional for planning new signs."""
-    from_folder = set(get_words_from_folders())
-    szavak = _load_szavak_optional()
-    return sorted(from_folder | szavak)
-
-
-def _load_szavak_optional() -> set[str]:
-    """Load words from szavak.txt if it exists. Returns empty set if missing."""
-    path = Path(DATA_PATH).parent.parent / "szavak.txt"
-    if not path.exists():
-        return set()
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return {line.strip() for line in f if line.strip()}
-    except OSError:
-        return set()
-
-
-def append_word_to_szavak(word: str) -> str | None:
-    """Append word to szavak.txt (optional). Returns error message or None. Prevents duplicates."""
-    word = word.strip()
-    if not word:
-        return "Word cannot be empty"
-    path = Path(DATA_PATH).parent.parent / "szavak.txt"
-    try:
-        existing = _load_szavak_optional()
-        if word in existing:
-            return f"'{word}' already in list."
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(word + "\n")
-        return None
-    except OSError as e:
-        return str(e)
+    """Words for Record tab: folder names under data/jelek/. Labels come from recorded data."""
+    return get_words_from_folders()
 
 
 def ensure_data_directories(actions: list[str]) -> None:

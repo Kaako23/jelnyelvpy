@@ -118,12 +118,11 @@ This creates `assets/mediapipe/` with `pose_landmarker.task`, `face_landmarker.t
 
 ## Teaching new signs (workflow)
 
-Labels come from **recorded data folders** (`data/jelek/<label>/...`), not from `szavak.txt`.
+Labels come from **recorded data folders** (`data/jelek/<label>/...`).
 
-1. **Add word** (optional) – In the Record tab, type a new word in "Add new word" and click "Add word". Word is added to `szavak.txt` for planning. Duplicates are rejected.
-2. **Record sequences** – Select a word (from dropdown: existing folders + szavak), then click "Record one sequence" (31 frames) or "Record all 31 sequences". Data goes to `data/jelek/<word>/<sequence>/<frame>.npy`.
-3. **Train** – In the Train tab, click "Train model". Labels are derived from folders with at least one complete sequence. Saves `your_model.pth` (with labels inside) and `ertekelesi_jelentes.txt`.
-4. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. If you just retrained, click "Reload model".
+1. **Record sequences** – In the Record tab, select a word from the dropdown (existing folders) or type a new word. Click "Record all 30 sequences". Data goes to `data/jelek/<word>/<sequence>/<frame>.npy`.
+2. **Train** – In the Train tab, click "Train model". Labels are derived from folders with at least one complete sequence. Saves `your_model.pth` (with labels inside) and `ertekelesi_jelentes.txt`.
+3. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. If you just retrained, click "Reload model".
 
 ## Inspecting a saved checkpoint
 
