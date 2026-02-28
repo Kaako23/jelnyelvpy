@@ -192,3 +192,4 @@ jelnyelvpy/
 ├── pyproject.toml      # Dependencies and tool config
 └── requirements.lock.txt  # Pinned deps for reproducible installs
 ```
+# jelnyelvpy
