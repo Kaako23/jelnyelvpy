@@ -99,7 +99,7 @@ def create_ui():
             with gr.Tab("3. Recognize"):
                 gr.Markdown(
                     "Click **Start recognition** to begin. Show your sign to the camera. "
-                    "The model needs ~31 frames (~1 sec) of the gesture. Click **Stop** when done."
+                    "Recognition starts after ~10 frames (~0.3 sec). Click **Stop** when done."
                 )
                 with gr.Row():
                     start_btn = gr.Button("Start recognition", variant="primary", visible=True)

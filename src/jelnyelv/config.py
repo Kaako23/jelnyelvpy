@@ -19,9 +19,14 @@ SEQUENCE_LENGTH = 31
 PAUSE_BETWEEN_SEQUENCES_SEC = 1.0
 BATCH_SIZE = 32
 EPOCHS = 30
-CONFIDENCE_THRESHOLD = 0.5
 GRAD_CLIP_MAX_NORM = 1.0
-STABILITY_GATE_N = 2  # Require same prediction N times before showing (2 = more reactive)
+
+# Recognition (inference)
+MIN_RECOGNITION_FRAMES = 10  # Start inference after this many frames (~0.33 sec at 30fps)
+CONFIDENCE_THRESHOLD = 0.5  # Only switch label when smoothed confidence >= this
+PREDICTION_SMOOTHING_WINDOW = 5  # Rolling average of last N probability vectors
+PREDICTION_HOLD_FRAMES = 5  # Keep previous label for N frames when conf drops below threshold
+
 # Resize frame to this width for recognition (smaller = faster MediaPipe, ~2–3x speedup)
 RECOGNITION_INPUT_WIDTH = 256
 

@@ -1,4 +1,4 @@
-"""Realtime inference: buffer, thresholding, stability gate."""
+"""Realtime inference: buffer, probability smoothing, hold logic."""
 
 from collections import deque
 
@@ -9,22 +9,25 @@ from jelnyelv.config import (
     CONFIDENCE_THRESHOLD,
     HIDDEN_SIZE,
     INPUT_SIZE,
+    MIN_RECOGNITION_FRAMES,
     MODEL_PATH,
+    PREDICTION_HOLD_FRAMES,
+    PREDICTION_SMOOTHING_WINDOW,
     SEQUENCE_LENGTH,
-    STABILITY_GATE_N,
 )
 from jelnyelv.model import LSTMModel
 
 
 class Recognizer:
-    """Maintains buffer and runs inference with stability gate."""
+    """Maintains buffer, runs inference with probability smoothing and hold logic."""
 
     def __init__(self) -> None:
         self._model: LSTMModel | None = None
         self._reverse_label_map: dict[int, str] = {}
         self._buffer: deque = deque(maxlen=SEQUENCE_LENGTH)
-        self._stability_queue: deque = deque(maxlen=STABILITY_GATE_N)
-        self._last_stable: str = "?"
+        self._prob_history: deque = deque(maxlen=PREDICTION_SMOOTHING_WINDOW)
+        self._displayed_label: str = "?"
+        self._hold_counter: int = 0
 
     def load(self) -> str | None:
         """Load model. Returns error message or None."""
@@ -67,8 +70,9 @@ class Recognizer:
         self._model.eval()
         self._reverse_label_map = {i: str(lbl) for lbl, i in label_map.items()}
         self._buffer.clear()
-        self._stability_queue.clear()
-        self._last_stable = "?"
+        self._prob_history.clear()
+        self._displayed_label = "?"
+        self._hold_counter = 0
         return None
 
     def _extract_state_dict(self, ckpt):
@@ -99,30 +103,41 @@ class Recognizer:
 
         kp = np.asarray(keypoints, dtype=np.float32)
         if kp.ndim != 1 or kp.shape[0] != INPUT_SIZE:
-            return "?", 0.0  # Invalid shape; skip frame silently
+            return self._displayed_label, 0.0
 
         self._buffer.append(kp)
-        if len(self._buffer) < SEQUENCE_LENGTH:
-            return self._last_stable, 0.0
+        if len(self._buffer) < MIN_RECOGNITION_FRAMES:
+            return self._displayed_label, 0.0
 
-        seq = np.stack(list(self._buffer), axis=0)
+        # Pad to SEQUENCE_LENGTH if we have fewer frames (repeat last frame for reactive early inference)
+        buf_list = list(self._buffer)
+        if len(buf_list) < SEQUENCE_LENGTH:
+            last = buf_list[-1]
+            buf_list = buf_list + [last] * (SEQUENCE_LENGTH - len(buf_list))
+        seq = np.stack(buf_list, axis=0)
         x = torch.tensor(seq[np.newaxis, :, :])
         with torch.no_grad():
             out = self._model(x)
             probs = torch.softmax(out, dim=1)
-            conf, pred = torch.max(probs, 1)
-        pred_idx = pred.item()
-        conf_val = conf.item()
+        probs_np = probs.numpy().squeeze()
+
+        # Rolling average of probability vectors
+        self._prob_history.append(probs_np)
+        avg_probs = np.mean(list(self._prob_history), axis=0)
+        pred_idx = int(np.argmax(avg_probs))
+        conf_val = float(avg_probs[pred_idx])
         label = self._reverse_label_map.get(pred_idx, "?")
-        self._stability_queue.append((label, conf_val))
 
-        if len(self._stability_queue) < STABILITY_GATE_N:
-            return self._last_stable, conf_val
-
-        labels = [p[0] for p in self._stability_queue]
-        if all(l == labels[0] for l in labels) and conf_val >= CONFIDENCE_THRESHOLD:
-            self._last_stable = label
+        # Stable output: hold previous label briefly when confidence drops
+        if conf_val >= CONFIDENCE_THRESHOLD:
+            self._displayed_label = label
+            self._hold_counter = 0
         else:
-            self._last_stable = "?"
+            if self._displayed_label != "?" and self._hold_counter < PREDICTION_HOLD_FRAMES:
+                self._hold_counter += 1
+                # Keep showing previous label
+            else:
+                self._displayed_label = "?"
+                self._hold_counter = 0
 
-        return self._last_stable, conf_val
+        return self._displayed_label, conf_val
