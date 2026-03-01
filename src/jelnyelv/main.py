@@ -1,4 +1,4 @@
-"""Sign language recognition app - Record, Train, Recognize tabs."""
+"""Sign language recognition app - Record & Train, Recognize tabs."""
 
 import os
 
@@ -39,19 +39,19 @@ def _check_imports() -> None:
 
 
 def create_ui():
-    """Create Gradio UI with Record, Train, Recognize tabs."""
+    """Create Gradio UI with Record & Train, Recognize tabs."""
     word_choices = get_words_for_record()
 
     with gr.Blocks(title="Jelnyelv – Sign Language Recognition") as demo:
         gr.Markdown("# Jelnyelv – Sign Language Recognition")
-        gr.Markdown("**1. Record** → **2. Train** → **3. Recognize**")
+        gr.Markdown("**1. Record & Train** → **2. Recognize**")
 
         with gr.Tabs():
-            # Record tab
-            with gr.Tab("1. Record"):
+            # Record & Train tab
+            with gr.Tab("1. Record & Train"):
                 gr.Markdown(
                     "Add training data by **recording with your webcam** or **importing a video file**. "
-                    "Each sequence is 31 frames."
+                    "Each sequence is 31 frames. Training runs automatically when data is added."
                 )
 
                 word_input = gr.Dropdown(
@@ -84,10 +84,17 @@ def create_ui():
                             record_btn = gr.Button("Record all 30", variant="primary")
                     record_status = gr.Textbox(label="Status", interactive=False)
 
+                train_status = gr.Textbox(
+                    label="Training status",
+                    value="—",
+                    interactive=False,
+                    lines=6,
+                )
+
                 record_btn.click(
                     fn=record_all_sequences_generator,
                     inputs=[word_input, sec_per_seq],
-                    outputs=[record_preview, record_status, word_input],
+                    outputs=[record_preview, record_status, word_input, train_status],
                 )
 
                 # --- Import from video ---
@@ -166,31 +173,19 @@ def create_ui():
                     out = gr.update(value=msg)
                     if choices is not None:
                         dd = gr.update(choices=choices)
-                        return out, dd
-                    return out, gr.update()
+                        train_msg, train_err = train_model()
+                        train_out = f"Error: {train_err}" if train_err else train_msg
+                        return out, dd, gr.update(value=train_out)
+                    return out, gr.update(), gr.update()
 
                 import_btn.click(
                     fn=do_import,
                     inputs=[video_input, word_input, import_start, import_end],
-                    outputs=[import_status, word_input],
+                    outputs=[import_status, word_input, train_status],
                 )
 
-            # Train tab
-            with gr.Tab("2. Train"):
-                gr.Markdown("Train the model on recorded sequences. Labels come from folder names.")
-                train_btn = gr.Button("Train model", variant="primary")
-                train_status = gr.Textbox(label="Status", interactive=False, lines=6)
-
-                def do_train():
-                    msg, err = train_model()
-                    if err:
-                        return f"Error: {err}"
-                    return msg
-
-                train_btn.click(fn=do_train, outputs=[train_status])
-
-            # Recognize tab (same pattern as Record: button + generator, no Gradio webcam)
-            with gr.Tab("3. Recognize"):
+            # Recognize tab
+            with gr.Tab("2. Recognize"):
                 gr.Markdown(
                     "Click **Start recognition** to begin. Show your sign to the camera. "
                     "Recognition starts after ~10 frames (~0.3 sec). Click **Stop** when done."

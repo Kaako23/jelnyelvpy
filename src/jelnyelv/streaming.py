@@ -15,6 +15,7 @@ from jelnyelv.config import (
     SEQUENCE_LENGTH,
 )
 from jelnyelv.dataset import ensure_data_directories, get_words_for_record
+from jelnyelv.train import train_model
 from jelnyelv.infer import Recognizer
 from jelnyelv.mp_features import (
     HolisticTasks,
@@ -25,16 +26,19 @@ from jelnyelv.mp_features import (
 
 
 def record_all_sequences_generator(word: str, seconds_per_sequence: float):
-    """Generator: record 30 sequences with MediaPipe overlay, yield (frame, status) for live preview.
-    Captures for exactly `seconds_per_sequence` wall-clock seconds, then samples/pads to SEQUENCE_LENGTH."""
+    """Generator: record 30 sequences with MediaPipe overlay, yield (frame, status, word_update, train_status).
+    Captures for exactly `seconds_per_sequence` wall-clock seconds, then samples/pads to SEQUENCE_LENGTH.
+    Trains automatically when done."""
+    _no_change = gr.update()
+
     if not word or not str(word).strip():
-        yield None, "Enter or select a word first.", gr.update()
+        yield None, "Enter or select a word first.", _no_change, _no_change
         return
 
     word = str(word).strip()
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        yield None, "Could not open camera. Check System Settings → Privacy → Camera.", gr.update()
+        yield None, "Could not open camera. Check System Settings → Privacy → Camera.", _no_change, _no_change
         return
 
     ensure_data_directories([word])
@@ -75,7 +79,7 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                     )
                     rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
                     last_frame = rgb
-                    yield rgb, status, gr.update()
+                    yield rgb, status, _no_change, _no_change
 
                 # Sample or pad to SEQUENCE_LENGTH and save
                 if keypoints_buffer:
@@ -112,13 +116,17 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                         2,
                     )
                     overlay = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
-                    yield overlay, status, gr.update()
+                    yield overlay, status, _no_change, _no_change
                     time.sleep(PAUSE_BETWEEN_SEQUENCES_SEC)
 
+        yield last_frame, "Training model...", gr.update(choices=get_words_for_record()), "Training..."
+        msg, err = train_model()
+        train_status = f"Error: {err}" if err else msg
         yield (
             last_frame,
             f"Done. Saved {NO_SEQUENCES} sequences for '{word}'.",
             gr.update(choices=get_words_for_record()),
+            train_status,
         )
     finally:
         cap.release()
