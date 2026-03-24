@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Build a single-file executable for macOS using PyInstaller.
+# Build a folder distribution with PyInstaller (onedir; avoids one-file size limits).
 # The executable starts the Gradio server and opens the default browser.
 # Usage: ./scripts/build_pyinstaller.sh
-# Output: dist/jelnyelv (or dist/jelnyelv-macos on some platforms)
+# Output: dist/Jelnyelv/Jelnyelv (run from that directory or add to PATH)
 
 set -euo pipefail
 
@@ -25,6 +25,5 @@ rm -rf build dist
 pyinstaller -y --clean Jelnyelv.spec
 
 echo ""
-echo "==> Build complete. Executable: dist/Jelnyelv"
-echo "    Run: ./dist/Jelnyelv"
+echo "==> Build complete. Run: ./dist/Jelnyelv/Jelnyelv"
 echo ""

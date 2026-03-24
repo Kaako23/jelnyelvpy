@@ -58,8 +58,7 @@ jobs:
         run: |
           source .venv/bin/activate
           pyinstaller -y --clean Jelnyelv.spec
-          cp dist/Jelnyelv "dist/${{ matrix.artifact_name }}${{ matrix.ext }}"
-          ls -la dist/
+          ls -la dist/Jelnyelv/
 
       - name: Build with PyInstaller (Windows)
         if: runner.os == 'Windows'
@@ -67,11 +66,10 @@ jobs:
         run: |
           .venv\Scripts\Activate.ps1
           pyinstaller -y --clean Jelnyelv.spec
-          Copy-Item dist\Jelnyelv.exe "dist\${{ matrix.artifact_name }}${{ matrix.ext }}"
-          Get-ChildItem dist
+          Get-ChildItem dist\Jelnyelv
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/${{ matrix.artifact_name }}${{ matrix.ext }}
+          path: dist/Jelnyelv

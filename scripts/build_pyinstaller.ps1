@@ -1,7 +1,7 @@
-# Build a single-file executable for Windows using PyInstaller.
+# Build a folder distribution with PyInstaller (onedir; avoids one-file size limits).
 # The executable starts the Gradio server and opens the default browser.
 # Usage: .\scripts\build_pyinstaller.ps1
-# Output: dist\jelnyelv.exe
+# Output: dist\Jelnyelv\Jelnyelv.exe
 
 $ErrorActionPreference = "Stop"
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -23,6 +23,5 @@ Remove-Item -Recurse -Force -ErrorAction SilentlyContinue build, dist
 pyinstaller -y --clean Jelnyelv.spec
 
 Write-Host ""
-Write-Host "==> Build complete. Executable: dist\Jelnyelv.exe"
-Write-Host "    Run: .\dist\Jelnyelv.exe"
+Write-Host "==> Build complete. Run: .\dist\Jelnyelv\Jelnyelv.exe"
 Write-Host ""

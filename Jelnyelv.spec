@@ -1,12 +1,12 @@
 # Jelnyelv.spec - PyInstaller spec for sign language recognition app
 # Build: pyinstaller -y --clean Jelnyelv.spec
-# Output: dist/Jelnyelv (onefile executable; on macOS, run ./dist/Jelnyelv)
+# Output: dist/Jelnyelv/ (folder with Jelnyelv or Jelnyelv.exe + _internal/)
+# Onedir avoids one-file 32-bit archive size limits (torch + deps can overflow).
 
 from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
-# Collect datas, binaries, hiddenimports for MediaPipe, OpenCV, Gradio, ONNX
 datas = []
 binaries = []
 hiddenimports = ["torch"]
@@ -36,20 +36,27 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="Jelnyelv",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="Jelnyelv",
 )

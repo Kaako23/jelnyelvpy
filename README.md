@@ -72,25 +72,24 @@ The Gradio app starts at `http://127.0.0.1:7860` (or next available port) and op
 
 ## Build
 
-Produce a single-file executable for the **current platform**:
+Produce a **folder distribution** (PyInstaller onedir) for the **current platform**—this avoids one-file archive size limits with PyTorch and other large dependencies:
 
 ```bash
 make build
 ```
 
-- **macOS**: `./scripts/build_pyinstaller.sh` → `dist/Jelnyelv`
-- **Windows**: `.\scripts\build_pyinstaller.ps1` → `dist\Jelnyelv.exe`
-- **Linux**: `./scripts/build_pyinstaller.sh` → `dist/Jelnyelv`
+- **macOS / Linux**: `./scripts/build_pyinstaller.sh` → `dist/Jelnyelv/Jelnyelv`
+- **Windows**: `.\scripts\build_pyinstaller.ps1` → `dist\Jelnyelv\Jelnyelv.exe`
 
-The executable starts the Gradio server and opens the default browser. Build uses `Jelnyelv.spec` (collects MediaPipe, OpenCV, Gradio, ONNXRuntime assets).
+Run the executable from inside `dist/Jelnyelv/` (it uses the `_internal` folder next to it). The app starts the Gradio server and opens the default browser. Build uses `Jelnyelv.spec` (collects MediaPipe, OpenCV, Gradio, ONNXRuntime assets).
 
 ### Platform-independent builds
 
-"Platform-independent" means **separate builds per OS**. Each executable must be built on (or for) its target platform. The GitHub Actions workflow builds all three:
+"Platform-independent" means **separate builds per OS**. Each build must be produced on its target platform. The GitHub Actions workflow builds all three; each artifact is the **`Jelnyelv` folder** (zip the folder or run from the extracted directory):
 
-- `macos-latest` → `jelnyelv-macos`
-- `windows-latest` → `jelnyelv-windows.exe`
-- `ubuntu-latest` → `jelnyelv-linux`
+- `macos-latest` → artifact `jelnyelv-macos` (contains `Jelnyelv/Jelnyelv`)
+- `windows-latest` → artifact `jelnyelv-windows` (contains `Jelnyelv/Jelnyelv.exe`)
+- `ubuntu-latest` → artifact `jelnyelv-linux` (contains `Jelnyelv/Jelnyelv`)
 
 Artifacts are attached to workflow runs. For releases, add a release workflow that uploads these artifacts to GitHub Releases.
 
@@ -145,7 +144,7 @@ if isinstance(ckpt, dict) and not any(k.startswith('lstm') or k.startswith('fc')
 
 ### Camera permission
 
-- **macOS**: System Settings → Privacy & Security → Camera → enable for Terminal/iTerm (or your IDE). When running the packaged app, add the built executable (e.g. Jelnyelv) if it appears in the list.
+- **macOS**: System Settings → Privacy & Security → Camera → enable for Terminal/iTerm (or your IDE). When running the packaged app, add the built executable under `dist/Jelnyelv/` (e.g. `Jelnyelv`) if it appears in the list.
 - **macOS "camera failed to properly initialize"**: The run scripts set `OPENCV_AVFOUNDATION_SKIP_AUTH=1`. If running manually, use: `OPENCV_AVFOUNDATION_SKIP_AUTH=1 python -m jelnyelv.main`
 - **Linux**: Ensure your user is in the `video` group.
 - **Browser**: Allow camera access when Gradio prompts.
