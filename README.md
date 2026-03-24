@@ -1,19 +1,18 @@
 # jelnyelv
 
-CPU-first sign language recognition app (webcam) using MediaPipe for pose/hand/face detection and PyTorch for sequence classification. Runs on macOS Apple Silicon (M4 Pro), with packaged builds for macOS, Windows, and Linux.
+CPU-first sign language recognition app (webcam) using MediaPipe for pose/hand/face detection and PyTorch for sequence classification. Runs on **macOS, Windows, and Linux** (development and packaged builds).
 
 ## Prerequisites
 
 - **Python 3.12**
-- **Webcam**
-- **macOS Apple Silicon** (M4 Pro or later recommended for development)
-- For bootstrap on macOS: [Homebrew](https://brew.sh) (for `python@3.12`)
+- **Webcam** (for recording and live recognition)
+- **Optional (macOS):** [Homebrew](https://brew.sh) if you use `./scripts/bootstrap_mac.sh` to install Python 3.12
 
 ## Setup
 
-### macOS (Apple Silicon)
+### macOS
 
-One-command bootstrap:
+One-command bootstrap (uses Homebrew for Python 3.12 if needed):
 
 ```bash
 ./scripts/bootstrap_mac.sh
