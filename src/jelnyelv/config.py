@@ -7,6 +7,7 @@ _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 DATA_PATH = os.path.join(_PROJECT_ROOT, "data", "jelek")
 MODEL_PATH = os.path.join(_PROJECT_ROOT, "your_model.pth")
 EVALUATION_REPORT_PATH = os.path.join(_PROJECT_ROOT, "ertekelesi_jelentes.txt")
+EVALUATION_CONFUSION_PNG_PATH = os.path.join(_PROJECT_ROOT, "ertekelesi_confusion_matrix.png")
 
 # MediaPipe holistic: pose(33*4) + face(468*3) + left_hand(21*3) + right_hand(21*3)
 POSE_DIMS = 33 * 4

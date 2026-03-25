@@ -119,8 +119,19 @@ This creates `assets/mediapipe/` with `pose_landmarker.task`, `face_landmarker.t
 Labels come from **recorded data folders** (`data/jelek/<label>/...`).
 
 1. **Record sequences** – In the Record tab, select a word from the dropdown (existing folders) or type a new word. Click "Record all 30 sequences". Data goes to `data/jelek/<word>/<sequence>/<frame>.npy`.
-2. **Train** – In the Train tab, click "Train model". Labels are derived from folders with at least one complete sequence. Saves `your_model.pth` (with labels inside) and `ertekelesi_jelentes.txt`.
+2. **Train** – Training runs automatically when data is added (or use the flow in the UI). Labels are derived from folders with at least one complete sequence. Saves `your_model.pth` (with labels inside), **`ertekelesi_jelentes.txt`** (metrics + qualitative lists), and **`ertekelesi_confusion_matrix.png`** (confusion matrix heatmap, up to 45 classes).
+
 3. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. If you just retrained, click "Reload model".
+
+### Kiértékelés (GitHub / bizottság számára)
+
+A tanítás után keletkezik:
+
+- **Kvantitatív mérőszámok:** pontosság (accuracy), macro precision / recall / F1, osztályonkénti találati arány (`ertekelesi_jelentes.txt`).
+- **Kvalitatív elemzés ugyanabban a fájlban:** legjobban és legrosszabbul felismert szavak, leggyakoribb összetévesztések (hol nagyobb a hibalehetőség).
+- **Vizuális:** `ertekelesi_confusion_matrix.png` – zavarodási mátrix ábra.
+
+**Fontos:** ezeket a fájlokat érdemes **commitolni** a repóba a tanítás után (a modell `.pth` továbbra is `.gitignore`-on maradhat, mert nagy). Így a GitHubon is látszik a kiértékelés, nem csak helyben.
 
 ## Inspecting a saved checkpoint
 
@@ -189,4 +200,3 @@ jelnyelvpy/
 ├── pyproject.toml      # Dependencies and tool config
 └── requirements.lock.txt  # Pinned deps for reproducible installs
 ```
-# jelnyelvpy

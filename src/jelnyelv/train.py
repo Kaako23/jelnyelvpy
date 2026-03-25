@@ -4,6 +4,10 @@ import logging
 import random
 from pathlib import Path
 
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
@@ -15,6 +19,7 @@ from torch.utils.data import DataLoader, Subset
 from jelnyelv.config import (
     BATCH_SIZE,
     EPOCHS,
+    EVALUATION_CONFUSION_PNG_PATH,
     EVALUATION_REPORT_PATH,
     GRAD_CLIP_MAX_NORM,
     HIDDEN_SIZE,
@@ -29,6 +34,40 @@ from jelnyelv.model import LSTMModel
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+# Confusion matrix PNG: full heatmap is unreadable beyond this many classes.
+_MAX_CLASSES_FOR_CONFUSION_PNG = 45
+
+
+def _save_confusion_matrix_png(cm: np.ndarray, actions: np.ndarray, path: str) -> None:
+    """Save confusion matrix heatmap for thesis / GitHub visibility (visual qualitative view)."""
+    n = len(actions)
+    if n == 0 or cm.size == 0:
+        return
+    if n > _MAX_CLASSES_FOR_CONFUSION_PNG:
+        logger.info(
+            "Skipping confusion matrix PNG (%d classes > %d); see text report.",
+            n,
+            _MAX_CLASSES_FOR_CONFUSION_PNG,
+        )
+        return
+    side = min(24, max(6.0, n * 0.45))
+    fig, ax = plt.subplots(figsize=(side, side))
+    im = ax.imshow(cm, interpolation="nearest", cmap="Blues")
+    plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    ax.set_xticks(range(n))
+    ax.set_yticks(range(n))
+    fs = max(5, min(10, 14 - n // 6))
+    ax.set_xticklabels([str(a) for a in actions], rotation=45, ha="right", fontsize=fs)
+    ax.set_yticklabels([str(a) for a in actions], fontsize=fs)
+    ax.set_ylabel("Igaz címke (y_true)")
+    ax.set_xlabel("Modell előrejelzése (y_pred)")
+    ax.set_title("Zavarodási mátrix (teszthalmaz)")
+    plt.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    logger.info("Confusion matrix plot saved: %s", path)
 
 
 def get_device() -> torch.device:
@@ -113,6 +152,8 @@ def _write_compact_report(
         f.write("\n".join(lines))
     logger.info("Report saved: %s", report_path)
 
+    _save_confusion_matrix_png(cm, actions, EVALUATION_CONFUSION_PNG_PATH)
+
 
 def train_model() -> tuple[str, str | None]:
     """Train LSTM and save checkpoint. Returns (status_message, error).
@@ -190,7 +231,13 @@ def train_model() -> tuple[str, str | None]:
         scheduler.step(avg_loss)
 
         if (epoch + 1) % 5 == 0:
-            logger.info("Epoch %d/%d - Loss: %.4f - Test Acc: %.1f%%", epoch + 1, EPOCHS, avg_loss, test_acc)
+            logger.info(
+                "Epoch %d/%d - Loss: %.4f - Test Acc: %.1f%%",
+                epoch + 1,
+                EPOCHS,
+                avg_loss,
+                test_acc,
+            )
 
     # Evaluation
     model.eval()
@@ -225,5 +272,6 @@ def train_model() -> tuple[str, str | None]:
     return (
         f"Model trained and saved: {MODEL_PATH}\n\n"
         f"Test accuracy: {acc_pct:.1f}%\n"
-        f"Report: {EVALUATION_REPORT_PATH}"
+        f"Szöveges jelentés: {EVALUATION_REPORT_PATH}\n"
+        f"Zavarodási mátrix (PNG): {EVALUATION_CONFUSION_PNG_PATH}"
     ), None

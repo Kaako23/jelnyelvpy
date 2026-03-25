@@ -31,7 +31,7 @@ your_model.pth
 data/
 jelek/
 assets/mediapipe/*.task
-ertekelesi_jelentes.txt
+# Commit ertekelesi_jelentes.txt + ertekelesi_confusion_matrix.png after training so reviewers see evaluation on GitHub.
 
 # IDE
 .idea/

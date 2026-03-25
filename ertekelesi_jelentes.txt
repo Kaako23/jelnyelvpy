@@ -1,0 +1,25 @@
+============================================================
+KIÉRTÉKELÉSI JELENTÉS (Jelnyelv felismerő modell)
+============================================================
+
+--- 1. ÖSSZESÍTŐ MÉRŐSZÁMOK ---
+
+Osztályok száma: 2
+Pontosság (accuracy): 92.3%
+Macro Precision: 0.929
+Macro Recall:    0.929
+Macro F1:        0.923
+
+--- 2. LEGJOBBAN FELISMERT SZAVAK ---
+
+  - szia: 100.0%
+  - szeret: 85.7%
+
+--- 3. LEGNEHEZEBBEN FELISMERT SZAVAK ---
+
+  - szeret: 85.7%
+  - szia: 100.0%
+
+--- 4. LEGGYAKORIBB ÖSSZETÉVESZTÉSEK ---
+
+  - 'szeret' → 'szia': 1x
