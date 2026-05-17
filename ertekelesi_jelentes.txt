@@ -4,22 +4,30 @@ KIÉRTÉKELÉSI JELENTÉS (Jelnyelv felismerő modell)
 
 --- 1. ÖSSZESÍTŐ MÉRŐSZÁMOK ---
 
-Osztályok száma: 2
-Pontosság (accuracy): 92.3%
-Macro Precision: 0.929
-Macro Recall:    0.929
-Macro F1:        0.923
+Osztályok száma: 5
+Pontosság (accuracy): 74.2%
+Macro Precision: 0.638
+Macro Recall:    0.750
+Macro F1:        0.676
 
 --- 2. LEGJOBBAN FELISMERT SZAVAK ---
 
+  - anya: 100.0%
+  - család: 100.0%
   - szia: 100.0%
-  - szeret: 85.7%
+  - szeret: 75.0%
+  - apa: 0.0%
 
 --- 3. LEGNEHEZEBBEN FELISMERT SZAVAK ---
 
-  - szeret: 85.7%
+  - apa: 0.0%
+  - szeret: 75.0%
   - szia: 100.0%
+  - család: 100.0%
+  - anya: 100.0%
 
 --- 4. LEGGYAKORIBB ÖSSZETÉVESZTÉSEK ---
 
+  - 'apa' → 'anya': 5x
+  - 'apa' → 'család': 2x
   - 'szeret' → 'szia': 1x

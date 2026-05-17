@@ -38,6 +38,14 @@ def _check_imports() -> None:
         sys.exit(1)
 
 
+def _refresh_word_dropdown():
+    """Reload labels from disk (data/jelek). Used on page load/refresh so the list stays in sync."""
+    choices = get_words_for_record()
+    if not choices:
+        return gr.update(choices=[], value=None)
+    return gr.update(choices=choices, value=choices[0])
+
+
 def create_ui():
     """Create Gradio UI with Record & Train, Recognize tabs."""
     word_choices = get_words_for_record()
@@ -215,6 +223,9 @@ def create_ui():
                     outputs=[start_btn, stop_btn],
                     cancels=[rec_click],
                 )
+
+        # Browser refresh reconnects with initial Block defaults; re-read folders so new words appear.
+        demo.load(_refresh_word_dropdown, outputs=word_input)
 
     return demo
 
