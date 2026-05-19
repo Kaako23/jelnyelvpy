@@ -22,6 +22,7 @@ from jelnyelv.mp_features import (
     draw_landmarks_on_image,
     extract_keypoints,
     mediapipe_detection,
+    pack_landmarks,
 )
 
 
@@ -59,7 +60,7 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                         continue
 
                     _, results = mediapipe_detection(frame, tasks)
-                    kp = extract_keypoints(results)
+                    kp = pack_landmarks(results)
                     keypoints_buffer.append(kp)
 
                     elapsed = time.perf_counter() - start

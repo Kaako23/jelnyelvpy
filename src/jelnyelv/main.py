@@ -12,7 +12,7 @@ import webbrowser
 
 import gradio as gr
 
-from jelnyelv.dataset import get_words_for_record
+from jelnyelv.dataset import delete_word_data, get_words_for_record, load_labels_from_data
 from jelnyelv.streaming import (
     _btn_idle,
     record_all_sequences_generator,
@@ -190,6 +190,53 @@ def create_ui():
                     fn=do_import,
                     inputs=[video_input, word_input, import_start, import_end],
                     outputs=[import_status, word_input, train_status],
+                )
+
+                with gr.Accordion("Remove word", open=False):
+                    gr.Markdown(
+                        "Permanently deletes the selected word's folder under `data/jelek/` "
+                        "(all sequences). Optionally retrains the model on the remaining words."
+                    )
+                    delete_retrain = gr.Checkbox(
+                        label="Retrain model after removal",
+                        value=True,
+                    )
+                    delete_btn = gr.Button("Remove selected word", variant="stop")
+                    delete_status = gr.Textbox(label="Removal status", interactive=False)
+
+                def do_delete_word(word: str, retrain_after: bool):
+                    ok, msg = delete_word_data(word)
+                    dd = _refresh_word_dropdown()
+                    if not ok:
+                        return msg, dd, gr.update()
+
+                    train_out = gr.update(value="—")
+                    if retrain_after:
+                        _labels, err = load_labels_from_data()
+                        if err:
+                            train_out = gr.update(
+                                value=f"{msg}\n\nNot retrained: {err}"
+                            )
+                        else:
+                            train_msg, train_err = train_model()
+                            if train_err:
+                                train_out = gr.update(
+                                    value=f"{msg}\n\nTraining error: {train_err}"
+                                )
+                            else:
+                                train_out = gr.update(
+                                    value=f"{msg}\n\n{train_msg}"
+                                )
+                    else:
+                        train_out = gr.update(
+                            value=f"{msg}\n\nRetrain skipped — use training after your next recording."
+                        )
+                    return msg, dd, train_out
+
+                delete_btn.click(
+                    fn=do_delete_word,
+                    inputs=[word_input, delete_retrain],
+                    outputs=[delete_status, word_input, train_status],
                 )
 
             # Recognize tab

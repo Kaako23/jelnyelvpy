@@ -1,12 +1,14 @@
 """Load/save sequences and word list. Streaming Dataset for scalable training."""
 
 import os
+import shutil
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 
 from jelnyelv.config import DATA_PATH, INPUT_SIZE, NO_SEQUENCES, SEQUENCE_LENGTH
+from jelnyelv.mp_features import scale_keypoint_vector
 
 
 def load_labels_from_data() -> tuple[list[str] | None, str | None]:
@@ -48,6 +50,30 @@ def get_words_for_record() -> list[str]:
     return get_words_from_folders()
 
 
+def _sanitize_label_name(word: str) -> str | None:
+    """Return safe folder name for a label, or None if invalid."""
+    if not word or not str(word).strip():
+        return None
+    name = os.path.basename(str(word).strip())
+    if not name or name in (".", "..") or os.path.sep in name or "/" in name or "\\" in name:
+        return None
+    return name
+
+
+def delete_word_data(word: str) -> tuple[bool, str]:
+    """Remove data/jelek/<word>/ and all sequences. Returns (success, message)."""
+    name = _sanitize_label_name(word)
+    if name is None:
+        return False, "Enter or select a valid word label."
+
+    path = os.path.join(DATA_PATH, name)
+    if not os.path.isdir(path):
+        return False, f"No folder found for '{name}' under data/jelek/."
+
+    shutil.rmtree(path)
+    return True, f"Removed all recorded data for '{name}'."
+
+
 def ensure_data_directories(actions: list[str]) -> None:
     """Create data directories for each action and sequence."""
     for action in actions:
@@ -86,7 +112,8 @@ def _load_sequence_from_disk(action_path: str, seq_idx: int) -> np.ndarray | Non
             return None
     if len(window) != SEQUENCE_LENGTH:
         return None
-    return np.stack(window, axis=0)
+    seq = np.stack(window, axis=0)
+    return scale_keypoint_vector(seq)
 
 
 class StreamSequencesDataset(Dataset):

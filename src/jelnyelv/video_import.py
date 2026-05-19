@@ -9,8 +9,8 @@ from jelnyelv.config import DATA_PATH, RECOGNITION_INPUT_WIDTH, SEQUENCE_LENGTH
 from jelnyelv.dataset import get_words_for_record
 from jelnyelv.mp_features import (
     HolisticTasks,
-    extract_keypoints,
     mediapipe_detection,
+    pack_landmarks,
 )
 
 
@@ -118,7 +118,7 @@ def import_from_video(
                 small_h = int(h * small_w / w)
                 small = cv2.resize(frame, (small_w, small_h), interpolation=cv2.INTER_LINEAR)
                 _, results = mediapipe_detection(small, tasks)
-                kp = extract_keypoints(results)
+                kp = pack_landmarks(results)
                 keypoints_buffer.append(kp)
                 frame_idx += 1
 

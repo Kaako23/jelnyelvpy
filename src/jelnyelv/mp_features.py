@@ -13,7 +13,14 @@ from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
 from mediapipe.tasks.python.vision import drawing_utils as mp_drawing
 
-from jelnyelv.config import FACE_DIMS, HAND_DIMS, POSE_DIMS
+from jelnyelv.config import (
+    FACE_DIMS,
+    FACE_FEATURE_SCALE,
+    HAND_DIMS,
+    HAND_FEATURE_SCALE,
+    POSE_DIMS,
+    POSE_FEATURE_SCALE,
+)
 
 
 @dataclass
@@ -103,8 +110,11 @@ def mediapipe_detection(bgr_image: np.ndarray, tasks: HolisticTasks) -> tuple[np
     return bgr_image, {"pose": pose_res, "face": face_res, "hands": hand_res}
 
 
-def extract_keypoints(results: dict) -> np.ndarray:
-    """Pack pose+face+hands into a (1662,) float32 vector."""
+def pack_landmarks(results: dict) -> np.ndarray:
+    """Pack pose+face+hands into a (1662,) float32 vector (unscaled, for saving to disk).
+
+    Scaling is applied in scale_keypoint_vector() so training, inference, and on-disk data stay consistent.
+    """
     pose_vec = np.zeros(POSE_DIMS, dtype=np.float32)
     if results["pose"].pose_landmarks:
         pts = results["pose"].pose_landmarks[0]
@@ -139,6 +149,29 @@ def extract_keypoints(results: dict) -> np.ndarray:
                 rh_vec[:] = vec
 
     return np.concatenate([pose_vec, face_vec, lh_vec, rh_vec]).astype(np.float32)
+
+
+def scale_keypoint_vector(arr: np.ndarray) -> np.ndarray:
+    """Apply pose/face/hand emphasis scales. Accepts (..., INPUT_SIZE) e.g. (1662,) or (T, 1662)."""
+    out = np.asarray(arr, dtype=np.float32).copy()
+    i = 0
+    j = i + POSE_DIMS
+    out[..., i:j] *= np.float32(POSE_FEATURE_SCALE)
+    i = j
+    j = i + FACE_DIMS
+    out[..., i:j] *= np.float32(FACE_FEATURE_SCALE)
+    i = j
+    j = i + HAND_DIMS
+    out[..., i:j] *= np.float32(HAND_FEATURE_SCALE)
+    i = j
+    j = i + HAND_DIMS
+    out[..., i:j] *= np.float32(HAND_FEATURE_SCALE)
+    return out
+
+
+def extract_keypoints(results: dict) -> np.ndarray:
+    """Landmarks packed and scaled for the LSTM (live inference / preview). Same scaling as training batches."""
+    return scale_keypoint_vector(pack_landmarks(results))
 
 
 def draw_landmarks_on_image(bgr_image: np.ndarray, results: dict) -> np.ndarray:

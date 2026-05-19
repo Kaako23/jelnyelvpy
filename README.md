@@ -121,7 +121,9 @@ Labels come from **recorded data folders** (`data/jelek/<label>/...`).
 1. **Record sequences** – In the Record tab, select a word from the dropdown (existing folders) or type a new word. Click "Record all 30 sequences". Data goes to `data/jelek/<word>/<sequence>/<frame>.npy`.
 2. **Train** – Training runs automatically when data is added (or use the flow in the UI). Labels are derived from folders with at least one complete sequence. Saves `your_model.pth` (with labels inside), **`ertekelesi_jelentes.txt`** (metrics + qualitative lists), and **`ertekelesi_confusion_matrix.png`** (confusion matrix heatmap, up to 45 classes).
 
-3. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. If you just retrained, click "Reload model".
+3. **Remove word** – In the **Remove word** accordion (Record & Train tab), select a label and click **Remove selected word**. This deletes `data/jelek/<word>/`. With **Retrain model after removal** checked, the model is updated for the remaining classes.
+
+4. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. Restart recognition after retraining so the new checkpoint is loaded.
 
 ### Kiértékelés (GitHub / bizottság számára)
 

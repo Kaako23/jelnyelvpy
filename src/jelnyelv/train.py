@@ -21,10 +21,13 @@ from jelnyelv.config import (
     EPOCHS,
     EVALUATION_CONFUSION_PNG_PATH,
     EVALUATION_REPORT_PATH,
+    FACE_FEATURE_SCALE,
     GRAD_CLIP_MAX_NORM,
+    HAND_FEATURE_SCALE,
     HIDDEN_SIZE,
     INPUT_SIZE,
     MODEL_PATH,
+    POSE_FEATURE_SCALE,
     TOP_N_BEST_CLASSES,
     TOP_N_CONFUSED_PAIRS,
     TOP_N_WORST_CLASSES,
@@ -264,6 +267,9 @@ def train_model() -> tuple[str, str | None]:
             "input_size": INPUT_SIZE,
             "hidden_size": HIDDEN_SIZE,
             "output_size": output_size,
+            "pose_feature_scale": POSE_FEATURE_SCALE,
+            "face_feature_scale": FACE_FEATURE_SCALE,
+            "hand_feature_scale": HAND_FEATURE_SCALE,
         },
     }
     torch.save(checkpoint, MODEL_PATH)

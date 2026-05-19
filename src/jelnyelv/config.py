@@ -14,6 +14,13 @@ POSE_DIMS = 33 * 4
 FACE_DIMS = 468 * 3
 HAND_DIMS = 21 * 3
 INPUT_SIZE = POSE_DIMS + FACE_DIMS + HAND_DIMS + HAND_DIMS
+
+# Per-body-part scaling applied in extract_keypoints() after landmarks are packed.
+# Raw dimension count is face-heavy (~84% of values are face); these scales rebalance
+# emphasis toward hands for sign-centric recognition. Must match at train and inference time.
+POSE_FEATURE_SCALE = 1.0
+FACE_FEATURE_SCALE = 0.35
+HAND_FEATURE_SCALE = 3.5
 HIDDEN_SIZE = 64
 NO_SEQUENCES = 30
 SEQUENCE_LENGTH = 31
