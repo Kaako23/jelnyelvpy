@@ -84,19 +84,6 @@ def create_ui():
                             record_btn = gr.Button("Összes 30 felvétele", variant="primary")
                     record_status = gr.Textbox(label="Állapot", interactive=False)
 
-                train_status = gr.Textbox(
-                    label="Tanítás állapota",
-                    value="—",
-                    interactive=False,
-                    lines=6,
-                )
-
-                record_btn.click(
-                    fn=record_all_sequences_generator,
-                    inputs=[word_input, sec_per_seq],
-                    outputs=[record_preview, record_status, word_input, train_status],
-                )
-
                 with gr.Accordion("Importálás videófájlból", open=False):
                     gr.Markdown(
                         "Tölts fel egy helyi videót. 31 képkockás szekvenciákat készítünk, "
@@ -177,12 +164,6 @@ def create_ui():
                         return out, dd, gr.update(value=train_out)
                     return out, gr.update(), gr.update()
 
-                import_btn.click(
-                    fn=do_import,
-                    inputs=[video_input, word_input, import_start, import_end],
-                    outputs=[import_status, word_input, train_status],
-                )
-
                 with gr.Accordion("Szó törlése", open=False):
                     gr.Markdown(
                         "Véglegesen törli a kiválasztott szó mappáját a `data/jelek/` alatt "
@@ -224,11 +205,40 @@ def create_ui():
                         )
                     return msg, dd, train_out
 
+                train_status = gr.Textbox(
+                    label="Tanítás állapota",
+                    value="—",
+                    interactive=False,
+                    lines=6,
+                )
+
+                def do_retrain():
+                    _labels, err = load_labels_from_data()
+                    if err:
+                        return gr.update(value=f"Nem indult tanítás: {err}")
+                    train_msg, train_err = train_model()
+                    if train_err:
+                        return gr.update(value=f"Hiba: {train_err}")
+                    return gr.update(value=train_msg)
+
+                retrain_btn = gr.Button("Tanítás újrafuttatása", variant="secondary")
+
+                record_btn.click(
+                    fn=record_all_sequences_generator,
+                    inputs=[word_input, sec_per_seq],
+                    outputs=[record_preview, record_status, word_input, train_status],
+                )
+                import_btn.click(
+                    fn=do_import,
+                    inputs=[video_input, word_input, import_start, import_end],
+                    outputs=[import_status, word_input, train_status],
+                )
                 delete_btn.click(
                     fn=do_delete_word,
                     inputs=[word_input, delete_retrain],
                     outputs=[delete_status, word_input, train_status],
                 )
+                retrain_btn.click(fn=do_retrain, outputs=[train_status])
 
             with gr.Tab("2. Felismerés"):
                 gr.Markdown(

@@ -109,7 +109,7 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                     yield overlay, status, _no_change, _no_change
                     time.sleep(PAUSE_BETWEEN_SEQUENCES_SEC)
 
-        yield last_frame, "Modell tanítása...", gr.update(choices=get_words_for_record()), "Tanítás..."
+        yield last_frame, "Training model...", gr.update(choices=get_words_for_record()), "Training..."
         msg, err = train_model()
         train_status = f"Hiba: {err}" if err else msg
         yield (

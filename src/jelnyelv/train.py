@@ -45,7 +45,7 @@ def _save_confusion_matrix_png(cm: np.ndarray, actions: np.ndarray, path: str) -
         return
     if n > _MAX_CLASSES_FOR_CONFUSION_PNG:
         logger.info(
-            "Zavarodási mátrix PNG kihagyva (%d osztály > %d); lásd a szöveges jelentést.",
+            "Confusion matrix PNG skipped (%d classes > %d); see text report.",
             n,
             _MAX_CLASSES_FOR_CONFUSION_PNG,
         )
@@ -59,14 +59,14 @@ def _save_confusion_matrix_png(cm: np.ndarray, actions: np.ndarray, path: str) -
     fs = max(5, min(10, 14 - n // 6))
     ax.set_xticklabels([str(a) for a in actions], rotation=45, ha="right", fontsize=fs)
     ax.set_yticklabels([str(a) for a in actions], fontsize=fs)
-    ax.set_ylabel("Igaz címke")
-    ax.set_xlabel("Modell előrejelzése")
-    ax.set_title("Zavarodási mátrix (teszthalmaz)")
+    ax.set_ylabel("True label")
+    ax.set_xlabel("Predicted label")
+    ax.set_title("Confusion matrix (test set)")
     plt.tight_layout()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    logger.info("Zavarodási mátrix mentve: %s", path)
+    logger.info("Confusion matrix saved: %s", path)
 
 
 def get_device() -> torch.device:
@@ -117,10 +117,10 @@ def _write_compact_report(
         "--- 1. ÖSSZESÍTŐ MÉRŐSZÁMOK ---",
         "",
         f"Osztályok száma: {n_classes}",
-        f"Pontosság: {acc:.1f}%",
-        f"Makró precízió: {macro_p:.3f}",
-        f"Makró visszahívás: {macro_r:.3f}",
-        f"Makró F1:        {macro_f1:.3f}",
+        f"Accuracy: {acc:.1f}%",
+        f"Macro precision: {macro_p:.3f}",
+        f"Macro recall:    {macro_r:.3f}",
+        f"Macro F1:        {macro_f1:.3f}",
         "",
         "--- 2. LEGJOBBAN FELISMERT SZAVAK ---",
         "",
@@ -138,7 +138,7 @@ def _write_compact_report(
 
     lines.extend([
         "",
-        "--- 4. LEGGYAKORIBB ÖSSZETÉVESZTÉSEK ---",
+        "--- 4. TOP CONFUSIONS ---",
         "",
     ])
     for true_w, pred_w, cnt in top_confused:
@@ -147,7 +147,7 @@ def _write_compact_report(
     Path(report_path).parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    logger.info("Jelentés mentve: %s", report_path)
+    logger.info("Report saved: %s", report_path)
 
     _save_confusion_matrix_png(cm, actions, EVALUATION_CONFUSION_PNG_PATH)
 
@@ -189,8 +189,8 @@ def train_model() -> tuple[str, str | None]:
     )
 
     device = get_device()
-    logger.info("Eszköz: %s", device)
-    logger.info("Tanító minták: %d, teszt minták: %d", len(train_ds), len(test_ds))
+    logger.info("Device: %s", device)
+    logger.info("Training samples: %d, test samples: %d", len(train_ds), len(test_ds))
 
     output_size = len(actions)
     model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, output_size).to(device)
@@ -227,7 +227,7 @@ def train_model() -> tuple[str, str | None]:
 
         if (epoch + 1) % 5 == 0:
             logger.info(
-                "Epoch %d/%d – veszteség: %.4f – teszt pontosság: %.1f%%",
+                "Epoch %d/%d – loss: %.4f – test accuracy: %.1f%%",
                 epoch + 1,
                 EPOCHS,
                 avg_loss,
@@ -268,7 +268,7 @@ def train_model() -> tuple[str, str | None]:
     acc_pct = 100 * (y_true == y_pred).mean()
     return (
         f"Modell betanítva és mentve: {MODEL_PATH}\n\n"
-        f"Teszt pontosság: {acc_pct:.1f}%\n"
-        f"Szöveges jelentés: {EVALUATION_REPORT_PATH}\n"
-        f"Zavarodási mátrix (PNG): {EVALUATION_CONFUSION_PNG_PATH}"
+        f"Test accuracy: {acc_pct:.1f}%\n"
+        f"Report: {EVALUATION_REPORT_PATH}\n"
+        f"Confusion matrix (PNG): {EVALUATION_CONFUSION_PNG_PATH}"
     ), None

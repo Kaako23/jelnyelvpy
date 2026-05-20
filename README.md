@@ -137,7 +137,7 @@ A tanítás után keletkezik:
 
 - **Kvantitatív mérőszámok:** pontosság (accuracy), macro precision / recall / F1, osztályonkénti találati arány (`ertekelesi_jelentes.txt`).
 - **Kvalitatív elemzés ugyanabban a fájlban:** legjobban és legrosszabbul felismert szavak, leggyakoribb összetévesztések (hol nagyobb a hibalehetőség).
-- **Vizuális:** `ertekelesi_confusion_matrix.png` – zavarodási mátrix ábra.
+- **Vizuális:** `ertekelesi_confusion_matrix.png` – confusion matrix ábra.
 
 **Fontos:** ezeket a fájlokat érdemes **commitolni** a repóba a tanítás után (a modell `.pth` továbbra is `.gitignore`-on maradhat, mert nagy). Így a GitHubon is látszik a kiértékelés, nem csak helyben.
 
