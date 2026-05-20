@@ -1,8 +1,5 @@
-"""Sign language recognition app - Record & Train, Recognize tabs."""
-
 import os
 
-# macOS: ensure OpenCV can access camera (set before cv2 import when possible)
 os.environ.setdefault("OPENCV_AVFOUNDATION_SKIP_AUTH", "1")
 import socket
 import sys
@@ -23,7 +20,6 @@ from jelnyelv.video_import import get_video_duration, import_from_video, sec_to_
 
 
 def _check_imports() -> None:
-    """Verify required imports. Exit with error message if any fail."""
     errors = []
     for name, mod in [("torch", "torch"), ("cv2", "cv2"), ("mediapipe", "mediapipe"), ("gradio", "gradio")]:
         try:
@@ -32,14 +28,13 @@ def _check_imports() -> None:
             errors.append(f"{name}: {e}")
 
     if errors:
-        print("Import check failed:", file=sys.stderr)
+        print("Import ellenőrzés sikertelen:", file=sys.stderr)
         for err in errors:
             print(f"  - {err}", file=sys.stderr)
         sys.exit(1)
 
 
 def _refresh_word_dropdown():
-    """Reload labels from disk (data/jelek). Used on page load/refresh so the list stays in sync."""
     choices = get_words_for_record()
     if not choices:
         return gr.update(choices=[], value=None)
@@ -47,38 +42,35 @@ def _refresh_word_dropdown():
 
 
 def create_ui():
-    """Create Gradio UI with Record & Train, Recognize tabs."""
     word_choices = get_words_for_record()
 
-    with gr.Blocks(title="Jelnyelv – Sign Language Recognition") as demo:
-        gr.Markdown("# Jelnyelv – Sign Language Recognition")
-        gr.Markdown("**1. Record & Train** → **2. Recognize**")
+    with gr.Blocks(title="Jelnyelv – jelnyelv-felismerés") as demo:
+        gr.Markdown("# Jelnyelv – jelnyelv-felismerés")
+        gr.Markdown("**1. Felvétel és tanítás** → **2. Felismerés**")
 
         with gr.Tabs():
-            # Record & Train tab
-            with gr.Tab("1. Record & Train"):
+            with gr.Tab("1. Felvétel és tanítás"):
                 gr.Markdown(
-                    "Add training data by **recording with your webcam** or **importing a video file**. "
-                    "Each sequence is 31 frames. Training runs automatically when data is added."
+                    "Tanító adatot **webkamerás felvétellel** vagy **videófájl importálásával** adhatsz hozzá. "
+                    "Egy szekvencia 31 képkocka. Új adat után a tanítás automatikusan elindul."
                 )
 
                 word_input = gr.Dropdown(
                     choices=word_choices,
-                    label="Word (label for the sign)",
+                    label="Szó (jel címke)",
                     value=word_choices[0] if word_choices else None,
                     allow_custom_value=True,
                     filterable=True,
                 )
 
-                # --- Record from webcam ---
-                with gr.Accordion("Record from webcam", open=True):
+                with gr.Accordion("Felvétel webkamerával", open=True):
                     gr.Markdown(
-                        "Capture 30 sequences live. Set duration per sequence; we sample to 31 frames. "
-                        "1 sec pause between sequences."
+                        "30 szekvencia élő felvétele. Állítsd be a szekvencia hosszát másodpercben; "
+                        "31 képkockára mintavételezünk. Szekvenciák között 1 mp szünet."
                     )
                     with gr.Row():
                         record_preview = gr.Image(
-                            label="Live preview",
+                            label="Élő előnézet",
                             type="numpy",
                         )
                         with gr.Column(scale=1):
@@ -87,13 +79,13 @@ def create_ui():
                                 maximum=8,
                                 value=4,
                                 step=1,
-                                label="Seconds per sequence",
+                                label="Másodperc szekvenciónként",
                             )
-                            record_btn = gr.Button("Record all 30", variant="primary")
-                    record_status = gr.Textbox(label="Status", interactive=False)
+                            record_btn = gr.Button("Összes 30 felvétele", variant="primary")
+                    record_status = gr.Textbox(label="Állapot", interactive=False)
 
                 train_status = gr.Textbox(
-                    label="Training status",
+                    label="Tanítás állapota",
                     value="—",
                     interactive=False,
                     lines=6,
@@ -105,20 +97,19 @@ def create_ui():
                     outputs=[record_preview, record_status, word_input, train_status],
                 )
 
-                # --- Import from video ---
-                with gr.Accordion("Import from video file", open=False):
+                with gr.Accordion("Importálás videófájlból", open=False):
                     gr.Markdown(
-                        "Upload a local video. We extract 31-frame sequences and add them to the word above. "
-                        "Use the range slider to trim (mm:ss format)."
+                        "Tölts fel egy helyi videót. 31 képkockás szekvenciákat készítünk, "
+                        "és a fenti szóhoz adjuk hozzá. A csúszkával vágd meg a tartományt (mm:ss)."
                     )
                     with gr.Row():
                         video_input = gr.Video(
-                            label="Video",
+                            label="Videó",
                             sources=["upload"],
                         )
                         with gr.Column(scale=1):
                             import_range_display = gr.Markdown(
-                                value="*Select a video to set range*",
+                                value="*Válassz videót a tartomány beállításához*",
                             )
                             import_start = gr.Slider(
                                 minimum=0,
@@ -126,7 +117,7 @@ def create_ui():
                                 value=0,
                                 step=1,
                                 precision=0,
-                                label="From",
+                                label="Mettől",
                             )
                             import_end = gr.Slider(
                                 minimum=0,
@@ -134,10 +125,10 @@ def create_ui():
                                 value=60,
                                 step=1,
                                 precision=0,
-                                label="To",
+                                label="Meddig",
                             )
-                            import_btn = gr.Button("Import", variant="secondary")
-                    import_status = gr.Textbox(label="Status", interactive=False)
+                            import_btn = gr.Button("Importálás", variant="secondary")
+                    import_status = gr.Textbox(label="Állapot", interactive=False)
 
                 def on_video_loaded(video):
                     duration, _, err = get_video_duration(video)
@@ -151,12 +142,12 @@ def create_ui():
                     return (
                         gr.update(maximum=duration, value=0),
                         gr.update(maximum=duration, minimum=0, value=duration),
-                        gr.update(value=f"**Range:** 00:00 → {sec_to_mmss(duration)}"),
+                        gr.update(value=f"**Tartomány:** 00:00 → {sec_to_mmss(duration)}"),
                     )
 
                 def on_range_change(start, end):
                     start, end = min(start, end), max(start, end)
-                    return gr.update(value=f"**Range:** {sec_to_mmss(start)} → {sec_to_mmss(end)}")
+                    return gr.update(value=f"**Tartomány:** {sec_to_mmss(start)} → {sec_to_mmss(end)}")
 
                 video_input.change(
                     fn=on_video_loaded,
@@ -182,7 +173,7 @@ def create_ui():
                     if choices is not None:
                         dd = gr.update(choices=choices)
                         train_msg, train_err = train_model()
-                        train_out = f"Error: {train_err}" if train_err else train_msg
+                        train_out = f"Hiba: {train_err}" if train_err else train_msg
                         return out, dd, gr.update(value=train_out)
                     return out, gr.update(), gr.update()
 
@@ -192,17 +183,17 @@ def create_ui():
                     outputs=[import_status, word_input, train_status],
                 )
 
-                with gr.Accordion("Remove word", open=False):
+                with gr.Accordion("Szó törlése", open=False):
                     gr.Markdown(
-                        "Permanently deletes the selected word's folder under `data/jelek/` "
-                        "(all sequences). Optionally retrains the model on the remaining words."
+                        "Véglegesen törli a kiválasztott szó mappáját a `data/jelek/` alatt "
+                        "(minden szekvencia). Opcionálisan újratanítja a modellt a megmaradt szavakra."
                     )
                     delete_retrain = gr.Checkbox(
-                        label="Retrain model after removal",
+                        label="Modell újratanítása törlés után",
                         value=True,
                     )
-                    delete_btn = gr.Button("Remove selected word", variant="stop")
-                    delete_status = gr.Textbox(label="Removal status", interactive=False)
+                    delete_btn = gr.Button("Kiválasztott szó törlése", variant="stop")
+                    delete_status = gr.Textbox(label="Törlés állapota", interactive=False)
 
                 def do_delete_word(word: str, retrain_after: bool):
                     ok, msg = delete_word_data(word)
@@ -215,13 +206,13 @@ def create_ui():
                         _labels, err = load_labels_from_data()
                         if err:
                             train_out = gr.update(
-                                value=f"{msg}\n\nNot retrained: {err}"
+                                value=f"{msg}\n\nNem tanult újra: {err}"
                             )
                         else:
                             train_msg, train_err = train_model()
                             if train_err:
                                 train_out = gr.update(
-                                    value=f"{msg}\n\nTraining error: {train_err}"
+                                    value=f"{msg}\n\nTanítási hiba: {train_err}"
                                 )
                             else:
                                 train_out = gr.update(
@@ -229,7 +220,7 @@ def create_ui():
                                 )
                     else:
                         train_out = gr.update(
-                            value=f"{msg}\n\nRetrain skipped — use training after your next recording."
+                            value=f"{msg}\n\nÚjratanítás kihagyva — a következő felvétel után tanul újra."
                         )
                     return msg, dd, train_out
 
@@ -239,22 +230,21 @@ def create_ui():
                     outputs=[delete_status, word_input, train_status],
                 )
 
-            # Recognize tab
-            with gr.Tab("2. Recognize"):
+            with gr.Tab("2. Felismerés"):
                 gr.Markdown(
-                    "Click **Start recognition** to begin. Show your sign to the camera. "
-                    "Recognition starts after ~10 frames (~0.3 sec). Click **Stop** when done."
+                    "A **Felismerés indítása** gombbal kezdhetsz. Mutasd a jelet a kamerának. "
+                    "A felismerés ~10 képkocka után indul (~0,3 mp). **Leállítás** a végén."
                 )
                 with gr.Row():
-                    start_btn = gr.Button("Start recognition", variant="primary", visible=True)
-                    stop_btn = gr.Button("Stop", variant="stop", visible=False)
+                    start_btn = gr.Button("Felismerés indítása", variant="primary", visible=True)
+                    stop_btn = gr.Button("Leállítás", variant="stop", visible=False)
                 rec_preview = gr.Image(
-                    label="Live view (landmarks + prediction)",
+                    label="Élő kép (jelzőpontok + előrejelzés)",
                     type="numpy",
                 )
-                prediction_text = gr.Textbox(label="Prediction", interactive=False)
+                prediction_text = gr.Textbox(label="Előrejelzés", interactive=False)
                 history_text = gr.Textbox(
-                    label="You showed",
+                    label="Eddig mutattad",
                     value="—",
                     interactive=False,
                 )
@@ -271,21 +261,18 @@ def create_ui():
                     cancels=[rec_click],
                 )
 
-        # Browser refresh reconnects with initial Block defaults; re-read folders so new words appear.
         demo.load(_refresh_word_dropdown, outputs=word_input)
 
     return demo
 
 
 def _free_port() -> int:
-    """Return an available port on 127.0.0.1."""
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
 
 
 def launch_ui(demo) -> None:
-    """Launch Gradio UI, pick a port, and open the default browser after a short delay."""
     port = _free_port()
     url = f"http://127.0.0.1:{port}"
 
@@ -298,7 +285,6 @@ def launch_ui(demo) -> None:
 
 
 def main() -> None:
-    """Run import check and launch Gradio app."""
     _check_imports()
 
     demo = create_ui()

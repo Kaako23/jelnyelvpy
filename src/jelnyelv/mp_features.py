@@ -1,5 +1,3 @@
-"""MediaPipe Tasks API: FaceLandmarker, HandLandmarker, PoseLandmarker."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -38,15 +36,13 @@ def _ensure_models_exist(models: MpTasksModels) -> None:
     missing = [str(p) for p in [models.pose, models.face, models.hand] if not p.exists()]
     if missing:
         raise FileNotFoundError(
-            "Missing MediaPipe Tasks model files:\n"
+            "Hiányzó MediaPipe Tasks modellfájlok:\n"
             + "\n".join(missing)
-            + "\n\nRun: python scripts/download_mediapipe_models.py"
+            + "\n\nFuttasd: python scripts/download_mediapipe_models.py"
         )
 
 
 class HolisticTasks:
-    """Replacement for mp.solutions.holistic using MediaPipe Tasks."""
-
     def __init__(self, models: MpTasksModels | None = None) -> None:
         if models is None:
             d = _default_model_dir()
@@ -99,7 +95,6 @@ class HolisticTasks:
 
 
 def mediapipe_detection(bgr_image: np.ndarray, tasks: HolisticTasks) -> tuple[np.ndarray, dict]:
-    """Return (bgr_image, results_dict)."""
     rgb = cv2.cvtColor(bgr_image, cv2.COLOR_BGR2RGB)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
@@ -111,10 +106,6 @@ def mediapipe_detection(bgr_image: np.ndarray, tasks: HolisticTasks) -> tuple[np
 
 
 def pack_landmarks(results: dict) -> np.ndarray:
-    """Pack pose+face+hands into a (1662,) float32 vector (unscaled, for saving to disk).
-
-    Scaling is applied in scale_keypoint_vector() so training, inference, and on-disk data stay consistent.
-    """
     pose_vec = np.zeros(POSE_DIMS, dtype=np.float32)
     if results["pose"].pose_landmarks:
         pts = results["pose"].pose_landmarks[0]
@@ -152,7 +143,6 @@ def pack_landmarks(results: dict) -> np.ndarray:
 
 
 def scale_keypoint_vector(arr: np.ndarray) -> np.ndarray:
-    """Apply pose/face/hand emphasis scales. Accepts (..., INPUT_SIZE) e.g. (1662,) or (T, 1662)."""
     out = np.asarray(arr, dtype=np.float32).copy()
     i = 0
     j = i + POSE_DIMS
@@ -170,12 +160,10 @@ def scale_keypoint_vector(arr: np.ndarray) -> np.ndarray:
 
 
 def extract_keypoints(results: dict) -> np.ndarray:
-    """Landmarks packed and scaled for the LSTM (live inference / preview). Same scaling as training batches."""
     return scale_keypoint_vector(pack_landmarks(results))
 
 
 def draw_landmarks_on_image(bgr_image: np.ndarray, results: dict) -> np.ndarray:
-    """Draw pose, face, and hand landmarks on image. Returns annotated BGR image."""
     annotated = bgr_image.copy()
     pose_spec = mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2)
     face_spec = mp_drawing.DrawingSpec(color=(200, 200, 200), thickness=1, circle_radius=1)

@@ -1,5 +1,3 @@
-"""Training logic with metrics and compact evaluation report."""
-
 import logging
 import random
 from pathlib import Path
@@ -38,18 +36,16 @@ from jelnyelv.model import LSTMModel
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
-# Confusion matrix PNG: full heatmap is unreadable beyond this many classes.
 _MAX_CLASSES_FOR_CONFUSION_PNG = 45
 
 
 def _save_confusion_matrix_png(cm: np.ndarray, actions: np.ndarray, path: str) -> None:
-    """Save confusion matrix heatmap for thesis / GitHub visibility (visual qualitative view)."""
     n = len(actions)
     if n == 0 or cm.size == 0:
         return
     if n > _MAX_CLASSES_FOR_CONFUSION_PNG:
         logger.info(
-            "Skipping confusion matrix PNG (%d classes > %d); see text report.",
+            "Zavarodási mátrix PNG kihagyva (%d osztály > %d); lásd a szöveges jelentést.",
             n,
             _MAX_CLASSES_FOR_CONFUSION_PNG,
         )
@@ -63,18 +59,17 @@ def _save_confusion_matrix_png(cm: np.ndarray, actions: np.ndarray, path: str) -
     fs = max(5, min(10, 14 - n // 6))
     ax.set_xticklabels([str(a) for a in actions], rotation=45, ha="right", fontsize=fs)
     ax.set_yticklabels([str(a) for a in actions], fontsize=fs)
-    ax.set_ylabel("Igaz címke (y_true)")
-    ax.set_xlabel("Modell előrejelzése (y_pred)")
+    ax.set_ylabel("Igaz címke")
+    ax.set_xlabel("Modell előrejelzése")
     ax.set_title("Zavarodási mátrix (teszthalmaz)")
     plt.tight_layout()
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(path, dpi=150, bbox_inches="tight")
     plt.close(fig)
-    logger.info("Confusion matrix plot saved: %s", path)
+    logger.info("Zavarodási mátrix mentve: %s", path)
 
 
 def get_device() -> torch.device:
-    """CPU or MPS (Apple Silicon)."""
     if torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")
@@ -86,7 +81,6 @@ def _write_compact_report(
     actions: np.ndarray,
     report_path: str,
 ) -> None:
-    """Write a compact evaluation report scalable to 2000+ classes."""
     n_classes = len(actions)
     precision, recall, f1, support = precision_recall_fscore_support(
         y_true, y_pred, zero_division=0
@@ -123,10 +117,10 @@ def _write_compact_report(
         "--- 1. ÖSSZESÍTŐ MÉRŐSZÁMOK ---",
         "",
         f"Osztályok száma: {n_classes}",
-        f"Pontosság (accuracy): {acc:.1f}%",
-        f"Macro Precision: {macro_p:.3f}",
-        f"Macro Recall:    {macro_r:.3f}",
-        f"Macro F1:        {macro_f1:.3f}",
+        f"Pontosság: {acc:.1f}%",
+        f"Makró precízió: {macro_p:.3f}",
+        f"Makró visszahívás: {macro_r:.3f}",
+        f"Makró F1:        {macro_f1:.3f}",
         "",
         "--- 2. LEGJOBBAN FELISMERT SZAVAK ---",
         "",
@@ -153,14 +147,12 @@ def _write_compact_report(
     Path(report_path).parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
-    logger.info("Report saved: %s", report_path)
+    logger.info("Jelentés mentve: %s", report_path)
 
     _save_confusion_matrix_png(cm, actions, EVALUATION_CONFUSION_PNG_PATH)
 
 
 def train_model() -> tuple[str, str | None]:
-    """Train LSTM and save checkpoint. Returns (status_message, error).
-    Uses streaming dataset loading for scalability."""
     labels, err = load_labels_from_data()
     if err:
         return "", err
@@ -170,7 +162,7 @@ def train_model() -> tuple[str, str | None]:
 
     full_ds = StreamSequencesDataset(actions, label_map)
     if len(full_ds) == 0:
-        return "", "No recorded data. Record sequences first."
+        return "", "Nincs felvett adat. Előbb vegyél fel szekvenciákat."
 
     indices = list(range(len(full_ds)))
     random.seed(42)
@@ -197,8 +189,8 @@ def train_model() -> tuple[str, str | None]:
     )
 
     device = get_device()
-    logger.info("Device: %s", device)
-    logger.info("Training samples: %d, Test samples: %d", len(train_ds), len(test_ds))
+    logger.info("Eszköz: %s", device)
+    logger.info("Tanító minták: %d, teszt minták: %d", len(train_ds), len(test_ds))
 
     output_size = len(actions)
     model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, output_size).to(device)
@@ -235,14 +227,13 @@ def train_model() -> tuple[str, str | None]:
 
         if (epoch + 1) % 5 == 0:
             logger.info(
-                "Epoch %d/%d - Loss: %.4f - Test Acc: %.1f%%",
+                "Epoka %d/%d – veszteség: %.4f – teszt pontosság: %.1f%%",
                 epoch + 1,
                 EPOCHS,
                 avg_loss,
                 test_acc,
             )
 
-    # Evaluation
     model.eval()
     all_preds, all_labels = [], []
     with torch.no_grad():
@@ -276,8 +267,8 @@ def train_model() -> tuple[str, str | None]:
 
     acc_pct = 100 * (y_true == y_pred).mean()
     return (
-        f"Model trained and saved: {MODEL_PATH}\n\n"
-        f"Test accuracy: {acc_pct:.1f}%\n"
+        f"Modell betanítva és mentve: {MODEL_PATH}\n\n"
+        f"Teszt pontosság: {acc_pct:.1f}%\n"
         f"Szöveges jelentés: {EVALUATION_REPORT_PATH}\n"
         f"Zavarodási mátrix (PNG): {EVALUATION_CONFUSION_PNG_PATH}"
     ), None

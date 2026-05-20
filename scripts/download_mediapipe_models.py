@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-"""Download MediaPipe Tasks model files to assets/mediapipe/."""
-
 import os
 import urllib.request
 from pathlib import Path
@@ -20,11 +18,11 @@ def main() -> None:
     for name, url in MODELS.items():
         path = MODEL_DIR / name
         if path.exists():
-            print(f"Skip (exists): {path}")
+            print(f"Kihagyva (létezik): {path}")
             continue
-        print(f"Downloading {name}...")
+        print(f"Letöltés: {name}...")
         urllib.request.urlretrieve(url, path)
-        print(f"Saved: {path}")
+        print(f"Mentve: {path}")
 
 
 if __name__ == "__main__":

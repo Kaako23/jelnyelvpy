@@ -1,23 +1,16 @@
-"""Configuration constants for sign language recognition."""
-
 import os
 
-# Paths relative to project root (repo root, not package)
 _PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 DATA_PATH = os.path.join(_PROJECT_ROOT, "data", "jelek")
 MODEL_PATH = os.path.join(_PROJECT_ROOT, "your_model.pth")
 EVALUATION_REPORT_PATH = os.path.join(_PROJECT_ROOT, "ertekelesi_jelentes.txt")
 EVALUATION_CONFUSION_PNG_PATH = os.path.join(_PROJECT_ROOT, "ertekelesi_confusion_matrix.png")
 
-# MediaPipe holistic: pose(33*4) + face(468*3) + left_hand(21*3) + right_hand(21*3)
 POSE_DIMS = 33 * 4
 FACE_DIMS = 468 * 3
 HAND_DIMS = 21 * 3
 INPUT_SIZE = POSE_DIMS + FACE_DIMS + HAND_DIMS + HAND_DIMS
 
-# Per-body-part scaling applied in extract_keypoints() after landmarks are packed.
-# Raw dimension count is face-heavy (~84% of values are face); these scales rebalance
-# emphasis toward hands for sign-centric recognition. Must match at train and inference time.
 POSE_FEATURE_SCALE = 1.0
 FACE_FEATURE_SCALE = 0.35
 HAND_FEATURE_SCALE = 3.5
@@ -29,16 +22,11 @@ BATCH_SIZE = 32
 EPOCHS = 30
 GRAD_CLIP_MAX_NORM = 1.0
 
-# Recognition (inference)
-MIN_RECOGNITION_FRAMES = 10  # Start inference after this many frames (~0.33 sec at 30fps)
-CONFIDENCE_THRESHOLD = 0.5  # Only switch label when smoothed confidence >= this
-PREDICTION_SMOOTHING_WINDOW = 5  # Rolling average of last N probability vectors
-PREDICTION_HOLD_FRAMES = 5  # Keep previous label for N frames when conf drops below threshold
-
-# Resize frame to this width for recognition (smaller = faster MediaPipe, ~2–3x speedup)
+MIN_RECOGNITION_FRAMES = 10
+CONFIDENCE_THRESHOLD = 0.5
+PREDICTION_SMOOTHING_WINDOW = 5
+PREDICTION_HOLD_FRAMES = 5
 RECOGNITION_INPUT_WIDTH = 256
-
-# Compact evaluation report (scalable to 2000+ classes)
 TOP_N_CONFUSED_PAIRS = 15
 TOP_N_BEST_CLASSES = 5
 TOP_N_WORST_CLASSES = 5

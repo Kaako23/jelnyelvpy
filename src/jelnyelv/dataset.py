@@ -1,5 +1,3 @@
-"""Load/save sequences and word list. Streaming Dataset for scalable training."""
-
 import os
 import shutil
 
@@ -12,10 +10,8 @@ from jelnyelv.mp_features import scale_keypoint_vector
 
 
 def load_labels_from_data() -> tuple[list[str] | None, str | None]:
-    """Derive labels from folder names under data/jelek/ that have at least one complete sequence.
-    Returns (labels, error_message). Labels are sorted for deterministic order."""
     if not os.path.isdir(DATA_PATH):
-        return None, f"No recorded data. Create {DATA_PATH} and record sequences first."
+        return None, f"Nincs felvett adat. Hozd létre: {DATA_PATH}, majd vegyél fel szekvenciákat."
 
     labels = []
     for name in sorted(os.listdir(DATA_PATH)):
@@ -34,24 +30,21 @@ def load_labels_from_data() -> tuple[list[str] | None, str | None]:
                 break
 
     if not labels:
-        return None, f"No recorded data. Record at least one complete sequence in {DATA_PATH}/<word>/<seq>/."
+        return None, f"Nincs felvett adat. Legalább egy teljes szekvenciát vegyél fel: {DATA_PATH}/<szó>/<szekv>/."
     return labels, None
 
 
 def get_words_from_folders() -> list[str]:
-    """Words that have recorded data (folder names under data/jelek/). For Record dropdown."""
     if not os.path.isdir(DATA_PATH):
         return []
     return sorted(d for d in os.listdir(DATA_PATH) if os.path.isdir(os.path.join(DATA_PATH, d)))
 
 
 def get_words_for_record() -> list[str]:
-    """Words for Record tab: folder names under data/jelek/. Labels come from recorded data."""
     return get_words_from_folders()
 
 
 def _sanitize_label_name(word: str) -> str | None:
-    """Return safe folder name for a label, or None if invalid."""
     if not word or not str(word).strip():
         return None
     name = os.path.basename(str(word).strip())
@@ -61,21 +54,19 @@ def _sanitize_label_name(word: str) -> str | None:
 
 
 def delete_word_data(word: str) -> tuple[bool, str]:
-    """Remove data/jelek/<word>/ and all sequences. Returns (success, message)."""
     name = _sanitize_label_name(word)
     if name is None:
-        return False, "Enter or select a valid word label."
+        return False, "Adj meg vagy válassz érvényes szócímkét."
 
     path = os.path.join(DATA_PATH, name)
     if not os.path.isdir(path):
-        return False, f"No folder found for '{name}' under data/jelek/."
+        return False, f"Nincs mappa a(z) „{name}” szóhoz a data/jelek/ alatt."
 
     shutil.rmtree(path)
-    return True, f"Removed all recorded data for '{name}'."
+    return True, f"A(z) „{name}” szó összes felvett adata törölve."
 
 
 def ensure_data_directories(actions: list[str]) -> None:
-    """Create data directories for each action and sequence."""
     for action in actions:
         for seq in range(NO_SEQUENCES):
             os.makedirs(os.path.join(DATA_PATH, action, str(seq)), exist_ok=True)
@@ -91,13 +82,11 @@ def _get_sequence_dirs(action_path: str) -> list[int]:
 
 
 def _validate_keypoints(arr: np.ndarray) -> bool:
-    """Validate keypoint array has expected shape (INPUT_SIZE,)."""
     arr = np.asarray(arr)
     return arr.ndim == 1 and arr.shape[0] == INPUT_SIZE
 
 
 def _load_sequence_from_disk(action_path: str, seq_idx: int) -> np.ndarray | None:
-    """Load one sequence from disk. Returns (SEQUENCE_LENGTH, INPUT_SIZE) array or None if invalid."""
     window = []
     for frame_num in range(SEQUENCE_LENGTH):
         frame_path = os.path.join(action_path, str(seq_idx), f"{frame_num}.npy")
@@ -117,20 +106,12 @@ def _load_sequence_from_disk(action_path: str, seq_idx: int) -> np.ndarray | Non
 
 
 class StreamSequencesDataset(Dataset):
-    """PyTorch Dataset that loads sequences from disk on demand. Scales to large vocabularies."""
-
     def __init__(
         self,
         actions: list[str],
         label_map: dict[str, int],
         indices: list[tuple[str, int]] | None = None,
     ) -> None:
-        """
-        Args:
-            actions: Ordered list of label names.
-            label_map: Mapping from label name to integer index.
-            indices: Optional list of (action, seq_idx) to include. If None, scans disk for all valid sequences.
-        """
         self.actions = actions
         self.label_map = label_map
         if indices is not None:
@@ -139,7 +120,6 @@ class StreamSequencesDataset(Dataset):
             self._indices = self._build_indices()
 
     def _build_indices(self) -> list[tuple[str, int]]:
-        """Scan disk and build list of (action, seq_idx) for complete sequences."""
         indices = []
         for action in self.actions:
             action_path = os.path.join(DATA_PATH, action)
@@ -158,8 +138,8 @@ class StreamSequencesDataset(Dataset):
         seq = _load_sequence_from_disk(action_path, seq_idx)
         if seq is None:
             raise ValueError(
-                f"Invalid sequence shape or missing frames: {action}/{seq_idx}. "
-                f"Expected {SEQUENCE_LENGTH} frames of {INPUT_SIZE} keypoints each."
+                f"Érvénytelen szekvencia vagy hiányzó képkockák: {action}/{seq_idx}. "
+                f"Elvárt: {SEQUENCE_LENGTH} képkocka, egyenként {INPUT_SIZE} kulcspont."
             )
         label = self.label_map[action]
         return torch.from_numpy(seq), label

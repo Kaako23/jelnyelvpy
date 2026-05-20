@@ -1,5 +1,3 @@
-"""Import sign language sequences from local video files."""
-
 import os
 
 import cv2
@@ -15,7 +13,6 @@ from jelnyelv.mp_features import (
 
 
 def _normalize_video_path(video_path) -> str | None:
-    """Extract file path from Gradio video input (str, list, or dict)."""
     if video_path is None:
         return None
     if isinstance(video_path, list) and video_path:
@@ -31,13 +28,12 @@ def _normalize_video_path(video_path) -> str | None:
 
 
 def get_video_duration(video_path) -> tuple[float, float, str | None]:
-    """Get video duration. Returns (duration_sec, 0, None) or (0, 0, error_msg)."""
     path = _normalize_video_path(video_path)
     if not path:
-        return 0.0, 0.0, "Select a video file first."
+        return 0.0, 0.0, "Először válassz videófájlt."
     cap = cv2.VideoCapture(path)
     if not cap.isOpened():
-        return 0.0, 0.0, f"Could not open video."
+        return 0.0, 0.0, "Nem sikerült megnyitni a videót."
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     cap.release()
@@ -46,7 +42,6 @@ def get_video_duration(video_path) -> tuple[float, float, str | None]:
 
 
 def sec_to_mmss(sec: float) -> str:
-    """Format seconds as mm:ss."""
     m = int(sec) // 60
     s = int(sec) % 60
     return f"{m:02d}:{s:02d}"
@@ -58,28 +53,17 @@ def import_from_video(
     start_sec: float | None = None,
     end_sec: float | None = None,
 ) -> tuple[str, list[str] | None]:
-    """Extract sequences from a local video and save as training data.
-
-    Args:
-        video_path: Path to video file (mp4, mov, avi, etc.).
-        word: Label for the sign shown in the video.
-        start_sec: Optional start time in seconds. None = from beginning.
-        end_sec: Optional end time in seconds. None = to end.
-
-    Returns:
-        (status_message, updated_word_choices or None on error)
-    """
     path = _normalize_video_path(video_path)
     if not path:
-        return "Select a video file first.", None
+        return "Először válassz videófájlt.", None
 
     if not word or not str(word).strip():
-        return "Enter or select a word label.", None
+        return "Adj meg vagy válassz szócímkét.", None
 
     word = str(word).strip()
     cap = cv2.VideoCapture(path)
     if not cap.isOpened():
-        return f"Could not open video: {path}", None
+        return f"Nem sikerült megnyitni a videót: {path}", None
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -93,7 +77,7 @@ def import_from_video(
         end_frame = int(end_sec * fps)
     if start_frame >= end_frame:
         cap.release()
-        return "Invalid start/end times.", None
+        return "Érvénytelen kezdő vagy záró időpont.", None
 
     word_path = os.path.join(DATA_PATH, word)
     os.makedirs(word_path, exist_ok=True)
@@ -122,7 +106,6 @@ def import_from_video(
                 keypoints_buffer.append(kp)
                 frame_idx += 1
 
-                # Emit sequences when we have enough frames
                 while len(keypoints_buffer) >= SEQUENCE_LENGTH:
                     seq_path = os.path.join(word_path, str(next_seq))
                     os.makedirs(seq_path, exist_ok=True)
@@ -136,7 +119,6 @@ def import_from_video(
                     next_seq += 1
                     seq_count += 1
 
-            # Pad and save remainder if we have at least a few frames
             if keypoints_buffer and len(keypoints_buffer) >= 5:
                 seq_path = os.path.join(word_path, str(next_seq))
                 os.makedirs(seq_path, exist_ok=True)
@@ -152,5 +134,5 @@ def import_from_video(
     finally:
         cap.release()
 
-    msg = f"Imported {seq_count} sequence(s) for '{word}' from video."
+    msg = f"{seq_count} szekvencia importálva a(z) „{word}” szóhoz a videóból."
     return msg, get_words_for_record()

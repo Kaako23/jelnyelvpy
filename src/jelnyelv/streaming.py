@@ -1,5 +1,3 @@
-"""Webcam streaming generators for Record and Recognize tabs."""
-
 import os
 import time
 
@@ -24,22 +22,20 @@ from jelnyelv.mp_features import (
     mediapipe_detection,
     pack_landmarks,
 )
+from jelnyelv.overlay import draw_text_bottom_left_bgr
 
 
 def record_all_sequences_generator(word: str, seconds_per_sequence: float):
-    """Generator: record 30 sequences with MediaPipe overlay, yield (frame, status, word_update, train_status).
-    Captures for exactly `seconds_per_sequence` wall-clock seconds, then samples/pads to SEQUENCE_LENGTH.
-    Trains automatically when done."""
     _no_change = gr.update()
 
     if not word or not str(word).strip():
-        yield None, "Enter or select a word first.", _no_change, _no_change
+        yield None, "Adj meg vagy válassz egy szót.", _no_change, _no_change
         return
 
     word = str(word).strip()
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        yield None, "Could not open camera. Check System Settings → Privacy → Camera.", _no_change, _no_change
+        yield None, "Nem sikerült megnyitni a kamerát. Ellenőrizd: Rendszerbeállítások → Adatvédelem → Kamera.", _no_change, _no_change
         return
 
     ensure_data_directories([word])
@@ -66,23 +62,19 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                     elapsed = time.perf_counter() - start
                     annotated = draw_landmarks_on_image(frame, results)
                     status = (
-                        f"Seq {seq + 1}/{NO_SEQUENCES}  "
-                        f"{elapsed:.1f}s / {duration_sec:.0f}s"
+                        f"Szekv. {seq + 1}/{NO_SEQUENCES}  "
+                        f"{elapsed:.1f} mp / {duration_sec:.0f} mp"
                     )
-                    cv2.putText(
+                    draw_text_bottom_left_bgr(
                         annotated,
                         status,
-                        (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1.0,
-                        (0, 255, 255),
-                        2,
+                        color_bgr=(0, 255, 255),
+                        scale=1.0,
                     )
                     rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
                     last_frame = rgb
                     yield rgb, status, _no_change, _no_change
 
-                # Sample or pad to SEQUENCE_LENGTH and save
                 if keypoints_buffer:
                     if len(keypoints_buffer) >= SEQUENCE_LENGTH:
                         indices = np.linspace(
@@ -101,31 +93,28 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
                         )
 
                 if seq < NO_SEQUENCES - 1:
-                    status = f"Pause 1 sec — next: Seq {seq + 2}/{NO_SEQUENCES}"
+                    status = f"1 mp szünet — következő: szekv. {seq + 2}/{NO_SEQUENCES}"
                     if last_frame is not None:
                         overlay_bgr = cv2.cvtColor(last_frame.copy(), cv2.COLOR_RGB2BGR)
                     else:
                         overlay_bgr = np.zeros((480, 640, 3), dtype=np.uint8)
                         overlay_bgr[:] = (40, 40, 40)
-                    cv2.putText(
+                    draw_text_bottom_left_bgr(
                         overlay_bgr,
-                        "1 sec pause...",
-                        (20, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1.2,
-                        (0, 255, 255),
-                        2,
+                        "1 mp szünet...",
+                        color_bgr=(0, 255, 255),
+                        scale=1.2,
                     )
                     overlay = cv2.cvtColor(overlay_bgr, cv2.COLOR_BGR2RGB)
                     yield overlay, status, _no_change, _no_change
                     time.sleep(PAUSE_BETWEEN_SEQUENCES_SEC)
 
-        yield last_frame, "Training model...", gr.update(choices=get_words_for_record()), "Training..."
+        yield last_frame, "Modell tanítása...", gr.update(choices=get_words_for_record()), "Tanítás..."
         msg, err = train_model()
-        train_status = f"Error: {err}" if err else msg
+        train_status = f"Hiba: {err}" if err else msg
         yield (
             last_frame,
-            f"Done. Saved {NO_SEQUENCES} sequences for '{word}'.",
+            f"Kész. {NO_SEQUENCES} szekvencia mentve: „{word}”.",
             gr.update(choices=get_words_for_record()),
             train_status,
         )
@@ -134,10 +123,9 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
 
 
 def recognize_generator():
-    """Generator: capture from webcam, run inference. Yields (frame, prediction, history, start_btn, stop_btn)."""
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        yield None, "Could not open camera.", "—", *_btn_idle()
+        yield None, "Nem sikerült megnyitni a kamerát.", "—", *_btn_idle()
         return
 
     cap.set(cv2.CAP_PROP_FPS, 30)
@@ -146,7 +134,7 @@ def recognize_generator():
     recognizer = Recognizer()
     err = recognizer.load()
     if err:
-        yield None, f"Model error: {err}", "—", *_btn_idle()
+        yield None, f"Modellhiba: {err}", "—", *_btn_idle()
         return
 
     history = []
@@ -177,14 +165,11 @@ def recognize_generator():
                 history_str = ", ".join(history) if history else "—"
 
                 annotated = draw_landmarks_on_image(frame, results)
-                cv2.putText(
+                draw_text_bottom_left_bgr(
                     annotated,
                     text,
-                    (20, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.2,
-                    (0, 255, 0) if label != "?" else (0, 165, 255),
-                    2,
+                    color_bgr=(0, 255, 0) if label != "?" else (0, 165, 255),
+                    scale=1.2,
                 )
                 rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
                 yield rgb, text, history_str, *_btn_running()
@@ -193,10 +178,8 @@ def recognize_generator():
 
 
 def _btn_running():
-    """Button states: Start hidden, Stop visible."""
     return gr.update(visible=False), gr.update(visible=True)
 
 
 def _btn_idle():
-    """Button states: Start visible, Stop hidden."""
     return gr.update(visible=True), gr.update(visible=False)

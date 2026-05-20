@@ -1,5 +1,3 @@
-"""Realtime inference: buffer, probability smoothing, hold logic."""
-
 from collections import deque
 
 import numpy as np
@@ -19,8 +17,6 @@ from jelnyelv.model import LSTMModel
 
 
 class Recognizer:
-    """Maintains buffer, runs inference with probability smoothing and hold logic."""
-
     def __init__(self) -> None:
         self._model: LSTMModel | None = None
         self._reverse_label_map: dict[int, str] = {}
@@ -30,28 +26,27 @@ class Recognizer:
         self._hold_counter: int = 0
 
     def load(self) -> str | None:
-        """Load model. Returns error message or None."""
         import os
 
         if not os.path.exists(MODEL_PATH):
-            return f"Model not found: {MODEL_PATH}. Train first."
+            return f"Modell nem található: {MODEL_PATH}. Előbb tanítsd be."
 
         try:
             ckpt = torch.load(MODEL_PATH, map_location="cpu", weights_only=False)
         except Exception as e:
-            return f"Failed to load model: {e}"
+            return f"Modell betöltése sikertelen: {e}"
 
         state_dict = self._extract_state_dict(ckpt)
         if state_dict is None:
             return (
-                f"Checkpoint has no 'model_state_dict' or 'state_dict'. "
-                f"Keys: {list(ckpt.keys()) if isinstance(ckpt, dict) else 'raw state_dict'}. "
-                f"Retrain the model."
+                f"A checkpointban nincs 'model_state_dict' vagy 'state_dict'. "
+                f"Kulcsok: {list(ckpt.keys()) if isinstance(ckpt, dict) else 'nyers state_dict'}. "
+                f"Tanítsd újra a modellt."
             )
 
         labels = ckpt.get("labels") or ckpt.get("actions") if isinstance(ckpt, dict) else None
         if labels is None:
-            return "Checkpoint has no labels. Retrain the model."
+            return "A checkpointban nincsenek címkék. Tanítsd újra a modellt."
 
         label_map = ckpt.get("label_map")
         if label_map is None:
@@ -62,8 +57,8 @@ class Recognizer:
             model_output_size = int(state_dict["fc3.weight"].shape[0])
             if output_size != model_output_size:
                 return (
-                    f"Checkpoint labels ({output_size}) do not match model output size ({model_output_size}). "
-                    f"Retrain the model."
+                    f"A checkpoint címkéi ({output_size}) nem egyeznek a modell kimenetével ({model_output_size}). "
+                    f"Tanítsd újra a modellt."
                 )
         self._model = LSTMModel(INPUT_SIZE, HIDDEN_SIZE, output_size)
         self._model.load_state_dict(state_dict, strict=False)
@@ -76,7 +71,6 @@ class Recognizer:
         return None
 
     def _extract_state_dict(self, ckpt):
-        """Extract state_dict from checkpoint dict, or raw state_dict/OrderedDict."""
         if ckpt is None:
             return None
         if isinstance(ckpt, dict):
@@ -97,7 +91,6 @@ class Recognizer:
         return None
 
     def add_frame(self, keypoints: np.ndarray) -> tuple[str, float]:
-        """Add one frame of keypoints. Returns (label, confidence)."""
         if self._model is None:
             return "?", 0.0
 
@@ -109,7 +102,6 @@ class Recognizer:
         if len(self._buffer) < MIN_RECOGNITION_FRAMES:
             return self._displayed_label, 0.0
 
-        # Pad to SEQUENCE_LENGTH if we have fewer frames (repeat last frame for reactive early inference)
         buf_list = list(self._buffer)
         if len(buf_list) < SEQUENCE_LENGTH:
             last = buf_list[-1]
@@ -121,21 +113,18 @@ class Recognizer:
             probs = torch.softmax(out, dim=1)
         probs_np = probs.numpy().squeeze()
 
-        # Rolling average of probability vectors
         self._prob_history.append(probs_np)
         avg_probs = np.mean(list(self._prob_history), axis=0)
         pred_idx = int(np.argmax(avg_probs))
         conf_val = float(avg_probs[pred_idx])
         label = self._reverse_label_map.get(pred_idx, "?")
 
-        # Stable output: hold previous label briefly when confidence drops
         if conf_val >= CONFIDENCE_THRESHOLD:
             self._displayed_label = label
             self._hold_counter = 0
         else:
             if self._displayed_label != "?" and self._hold_counter < PREDICTION_HOLD_FRAMES:
                 self._hold_counter += 1
-                # Keep showing previous label
             else:
                 self._displayed_label = "?"
                 self._hold_counter = 0
