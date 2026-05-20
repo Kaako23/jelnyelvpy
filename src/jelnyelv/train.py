@@ -227,7 +227,7 @@ def train_model() -> tuple[str, str | None]:
 
         if (epoch + 1) % 5 == 0:
             logger.info(
-                "Epoka %d/%d – veszteség: %.4f – teszt pontosság: %.1f%%",
+                "Epoch %d/%d – veszteség: %.4f – teszt pontosság: %.1f%%",
                 epoch + 1,
                 EPOCHS,
                 avg_loss,
