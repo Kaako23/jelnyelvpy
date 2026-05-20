@@ -233,7 +233,8 @@ def create_ui():
             with gr.Tab("2. Felismerés"):
                 gr.Markdown(
                     "A **Felismerés indítása** gombbal kezdhetsz. Mutasd a jelet a kamerának. "
-                    "A felismerés ~10 képkocka után indul (~0,3 mp). **Leállítás** a végén."
+                    "Az előrejelzés kb. 10 képkocka után jelenik meg (nagyjából 0,3 mp 30 fps mellett). "
+                    "A **Leállítás** gombbal állíthatod meg a kamerát."
                 )
                 with gr.Row():
                     start_btn = gr.Button("Felismerés indítása", variant="primary", visible=True)
