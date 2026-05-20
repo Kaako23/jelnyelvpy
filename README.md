@@ -125,6 +125,12 @@ Labels come from **recorded data folders** (`data/jelek/<label>/...`).
 
 4. **Recognize** – In the Recognize tab, start webcam. Labels come from the checkpoint only. Restart recognition after retraining so the new checkpoint is loaded.
 
+### MediaPipe bemenet és skálák
+
+Részletes leírás (vektor felépítés, egykezes jelek, skálák, hibakeresés): **[docs/mediapipe_jellemzok.md](docs/mediapipe_jellemzok.md)**.
+
+Skálák a `src/jelnyelv/config.py`-ban; változtatás után **újratanítás** kell.
+
 ### Kiértékelés (GitHub / bizottság számára)
 
 A tanítás után keletkezik:
