@@ -57,7 +57,7 @@ def create_ui():
 
                 word_input = gr.Dropdown(
                     choices=word_choices,
-                    label="Szó (jel címke)",
+                    label="Szó",
                     value=word_choices[0] if word_choices else None,
                     allow_custom_value=True,
                     filterable=True,
@@ -243,7 +243,6 @@ def create_ui():
             with gr.Tab("2. Felismerés"):
                 gr.Markdown(
                     "A **Felismerés indítása** gombbal kezdhetsz. Mutasd a jelet a kamerának. "
-                    "Az előrejelzés kb. 10 képkocka után jelenik meg (nagyjából 0,3 mp 30 fps mellett). "
                     "A **Leállítás** gombbal állíthatod meg a kamerát."
                 )
                 with gr.Row():
@@ -253,7 +252,6 @@ def create_ui():
                     label="Élő kép (jelzőpontok + előrejelzés)",
                     type="numpy",
                 )
-                prediction_text = gr.Textbox(label="Előrejelzés", interactive=False)
                 history_text = gr.Textbox(
                     label="Eddig mutattad",
                     value="—",
@@ -263,7 +261,7 @@ def create_ui():
                 rec_click = start_btn.click(
                     fn=recognize_generator,
                     inputs=[],
-                    outputs=[rec_preview, prediction_text, history_text, start_btn, stop_btn],
+                    outputs=[rec_preview, history_text, start_btn, stop_btn],
                 )
                 stop_btn.click(
                     fn=_btn_idle,

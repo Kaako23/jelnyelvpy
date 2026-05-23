@@ -42,6 +42,7 @@ assets/mediapipe/*.task
 # OS
 .DS_Store
 Thumbs.db
+szakdoga.tex
 
 # Build / tools
 .ruff_cache/

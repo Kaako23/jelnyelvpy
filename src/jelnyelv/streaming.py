@@ -125,7 +125,7 @@ def record_all_sequences_generator(word: str, seconds_per_sequence: float):
 def recognize_generator():
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
-        yield None, "Nem sikerült megnyitni a kamerát.", "—", *_btn_idle()
+        yield None, "Nem sikerült megnyitni a kamerát.", *_btn_idle()
         return
 
     cap.set(cv2.CAP_PROP_FPS, 30)
@@ -134,7 +134,7 @@ def recognize_generator():
     recognizer = Recognizer()
     err = recognizer.load()
     if err:
-        yield None, f"Modellhiba: {err}", "—", *_btn_idle()
+        yield None, f"Modellhiba: {err}", *_btn_idle()
         return
 
     history = []
@@ -172,7 +172,7 @@ def recognize_generator():
                     scale=1.2,
                 )
                 rgb = cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
-                yield rgb, text, history_str, *_btn_running()
+                yield rgb, history_str, *_btn_running()
     finally:
         cap.release()
 
